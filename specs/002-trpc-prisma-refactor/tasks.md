@@ -15,6 +15,14 @@
 
 ---
 
+## Phase 0: Baseline (Pre-Refactor Record)
+
+**Purpose**: Establish the SC-002 baseline so the post-refactor test run can be compared against a known good state.
+
+- [ ] T000 On the current main branch (before any Phase 1 changes), run `npm test` in backend/ and frontend/; record total test count and pass/fail status. If no tests exist, document "0 tests — SC-002 vacuously satisfied."
+
+---
+
 ## Phase 1: Setup (Install Dependencies & Configuration)
 
 **Purpose**: Install new packages and create environment config so all subsequent phases compile.
@@ -34,7 +42,7 @@
 
 - [ ] T005 Create backend/prisma/schema.prisma with generator (prisma-client-js), datasource (sqlite, env DATABASE_URL), and models Reporter, Editor, Job exactly as specified in data-model.md (including @@map directives, nullable FKs, and DateTime fields)
 - [ ] T006 Run `npx prisma migrate dev --name init` from backend/ to generate backend/prisma/migrations/…_init/ SQL files and regenerate the Prisma client in backend/node_modules/.prisma/client/
-- [ ] T007 [P] Create backend/src/trpc/context.ts exporting createContext function that instantiates and returns a PrismaClient; export Context type inferred from createContext return
+- [ ] T007 Create backend/src/trpc/context.ts exporting createContext function that instantiates and returns a PrismaClient; export Context type inferred from createContext return
 - [ ] T008 [P] Create backend/src/trpc/schemas.ts with Zod schemas: CreateJobSchema, AssignReporterSchema, AssignEditorSchema, JobIdSchema, ListReportersSchema as defined in data-model.md
 - [ ] T009 Update backend/src/types/shared.ts to re-export Prisma-generated types (Reporter, Editor, Job) via `export type { Reporter, Editor, Job } from '@prisma/client'` and define JobListItem, CreateJobRequest, AssignReporterRequest, AssignEditorRequest as specified in data-model.md
 
@@ -82,7 +90,7 @@
 ### Implementation for User Story 2
 
 - [ ] T028 [P] [US2] Create backend/prisma/seed.ts using PrismaClient to upsert seed records: reporters Adi Santoso (Jakarta), Budi Hartono (Jakarta), Citra Dewi (Surabaya), Dian Permata (Bandung, is_available=false) all with rate_per_minute=2000; editors Eka Rahardjo and Farah Yunita both with flat_fee=50000; wrap in try/finally to disconnect PrismaClient
-- [ ] T029 [US2] Add `"prisma": { "seed": "ts-node prisma/seed.ts" }` field to backend/package.json and add script `"db:setup": "prisma migrate dev --name init && prisma db seed"` to backend/package.json scripts
+- [ ] T029 [US2] Add `"prisma": { "seed": "ts-node prisma/seed.ts" }` field to backend/package.json; add script `"db:setup": "prisma migrate dev --name init && prisma db seed"` to backend/package.json scripts; add script `"test": "jest"` to backend/package.json scripts
 - [ ] T030 [US2] Delete backend/src/db/ directory (better-sqlite3 database setup and migration runner code replaced by Prisma)
 
 **Checkpoint**: Run `cd backend && npm run db:setup` against a clean data/ directory — migration applies, Prisma client regenerates, seed inserts 4 reporters and 2 editors. Confirm with `npx prisma studio` or a direct query.
@@ -152,7 +160,8 @@
 ### Parallel Opportunities
 
 - T001, T002, T003, T004 can all run in parallel (Phase 1)
-- T007, T008 can run in parallel during Phase 2 (different files, both depend on T005)
+- T008 can run in parallel during Phase 2 (depends on T005 only)
+- T007 depends on T006 — @prisma/client is not generated until `prisma migrate dev` completes
 - T010, T011, T012 can run in parallel (different data-access files)
 - T013, T014, T015 can run in parallel (different sub-router files)
 - T018, T019 can run in parallel (different config files)

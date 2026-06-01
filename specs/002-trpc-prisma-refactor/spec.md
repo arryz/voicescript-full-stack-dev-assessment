@@ -58,20 +58,20 @@ All existing court-reporting workflow features — job listing, reporter assignm
 ### Edge Cases
 
 - When a migration fails mid-run, the operation is fully rolled back and the database is left in its pre-migration state (atomic transaction).
-- How does the system behave when a frontend client built against an older API contract connects to a newer backend?
-- What happens if the database file is missing or corrupted on startup?
-- How are currently-running requests handled during a schema migration?
+- **Out of scope** — older API contract client: the only client is the bundled frontend, redeployed with every backend change; no versioned client compatibility is required.
+- **Out of scope** — missing/corrupted database: Prisma will throw on the first query and the server startup will fail visibly; no graceful recovery path is required for this refactor.
+- **Out of scope** — in-flight requests during migration: migrations run exclusively via `npm run db:setup` before the server starts; no migration is applied to a live running server.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST ensure that any mismatch between the data shape the backend produces and the data shape the frontend consumes is caught before the application runs.
+- **FR-001**: The system MUST ensure that any mismatch between the data shape the backend's API layer produces and the data shape the frontend consumes is caught at compile time — before the application runs. *(Scope: API contract layer — tRPC procedure outputs ↔ frontend hook call sites.)*
 - **FR-002**: The system MUST provide a single, authoritative definition of the database schema that the data-access layer derives its types from automatically.
 - **FR-003**: The system MUST support version-controlled, sequential database schema migrations that can be applied without data loss.
 - **FR-004**: All existing API operations — listing jobs, listing reporters, listing editors, assigning a reporter, assigning an editor, and transitioning job status — MUST be preserved with identical inputs, outputs, and business rules.
-- **FR-005**: The system MUST surface schema or contract violations as errors at build time or development time, not at runtime.
-- **FR-006**: The data-access layer MUST expose full create, read, update, and delete operations for jobs, reporters, and editors.
+- **FR-005**: The system MUST surface database schema violations as errors at compile time — before the application runs. *(Scope: data layer — Prisma schema definition ↔ data-access layer query calls. Complementary to FR-001, which covers the API contract layer.)*
+- **FR-006**: The data-access layer MUST expose create, read, and update operations for jobs. Reporters and editors require read-only access — no create, update, or delete operations are required for those entities.
 - **FR-007**: The system MUST seed the database with the existing test data set on a fresh install, preserving the same records currently in the seed migration.
 - **FR-008**: The development experience MUST allow a developer to run the full stack locally with a single command sequence (install → migrate → start).
 

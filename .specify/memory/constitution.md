@@ -73,11 +73,19 @@ data-access. Controllers MUST NOT contain business logic — delegate to service
 MUST NOT contain HTTP-specific code (no `req`/`res`). The workflow state machine (Principle II)
 lives exclusively in the service layer.
 
+**Exception (tRPC)**: When the API layer uses tRPC, route and controller responsibilities MAY be
+unified into tRPC router procedures, provided the service and data-access layers remain distinct and
+unchanged. Business logic MUST NOT appear in tRPC procedures — delegate to service functions. This
+exception is justified because tRPC's end-to-end type inference requires the procedure definition
+to be the single authoritative source of the API contract; a separate controller shim breaks the
+type chain (see `002-trpc-prisma-refactor` Complexity Tracking).
+
 ### V. SQLite Data Persistence
 
 All persistent data MUST be stored in SQLite. A dedicated data-access layer handles all queries;
 raw SQL in controllers or services is PROHIBITED. Schema changes MUST be managed via versioned
-migration files applied on server startup.
+migration files. Migrations MUST be applied before the server accepts requests (either on startup
+or via a pre-start setup command); they MUST NOT be applied to a live running server.
 
 ### VI. Code Clarity — No Long Ternaries
 
@@ -93,7 +101,8 @@ without ambiguity and reduce reviewer cognitive load.
 - **Frontend**: React (functional components + hooks), `frontend/`
 - **Backend**: Node.js + Express, `backend/`
 - **Language**: TypeScript throughout (strict mode enabled)
-- **Database**: SQLite via `better-sqlite3`
+- **Database**: SQLite via Prisma 5.x (ORM + versioned migrations; `better-sqlite3` replaced in `002-trpc-prisma-refactor`)
+- **API Layer**: tRPC v11 (`@trpc/server` backend, `@trpc/react-query` + TanStack Query v5 frontend) — added in `002-trpc-prisma-refactor`
 - **Shared types**: `shared/` package or `backend/src/types/` re-exported to frontend
 - **Testing**: Jest + Supertest — include only when explicitly requested in the feature spec
 
@@ -111,4 +120,4 @@ plan's Complexity Tracking table. Amendments require: (1) documenting the change
 (2) a semantic version bump, and (3) a migration note if existing work is affected. All
 implementation plans MUST include a Constitution Check gate before Phase 0 research.
 
-**Version**: 1.1.0 | **Ratified**: 2026-05-30 | **Last Amended**: 2026-05-30
+**Version**: 1.2.0 | **Ratified**: 2026-05-30 | **Last Amended**: 2026-06-01
