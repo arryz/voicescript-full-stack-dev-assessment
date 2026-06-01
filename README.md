@@ -4,6 +4,45 @@ A single-screen web dashboard for agency staff to manage court reporting jobs �
 
 ---
 
+## Development Summary
+
+This application was developed following the **[Spec-Kit](https://github.com/github/spec-kit) methodology** — a structured, specification-first approach to software development. Each feature was defined through a clear spec before any code was written, ensuring requirements, edge cases, and acceptance criteria were explicit upfront. This kept the implementation focused, traceable, and free of scope creep.
+
+### Technology Choices
+
+**Backend**
+
+| Concern | Technology | Rationale |
+|---|---|---|
+| API layer | [tRPC v11](https://trpc.io/) | End-to-end type safety between server and client without a separate schema layer; no REST boilerplate |
+| ORM | [Prisma 5](https://www.prisma.io/) | Declarative schema, auto-generated type-safe client, and first-class SQLite support via versioned migrations |
+| Runtime | Node.js + Express 4 | Lightweight HTTP server that tRPC mounts onto; familiar and well-supported |
+| Language | TypeScript 5 (strict) | Single language across the stack; strict mode catches contract violations at compile time |
+
+**Frontend**
+
+| Concern | Technology | Rationale |
+|---|---|---|
+| Framework | React 18 | Component model maps cleanly to the dashboard's state-driven workflow |
+| Language | TypeScript 5 (strict) | Shared types inferred directly from the tRPC router — no manual type duplication |
+| Styling | Tailwind CSS | Utility-first approach keeps styles co-located with markup and eliminates unused CSS |
+| Data fetching | tRPC + TanStack Query v5 | Queries and mutations auto-typed from the router; cache invalidation handled by TanStack Query |
+| Build tool | Vite | Fast HMR during development; `/trpc` proxied to the backend |
+
+### Frontend Component Architecture
+
+UI components are organized according to **[Brad Frost's Atomic Design](https://atomicdesign.bradfrost.com/chapter-2/)** methodology, which structures the interface into a hierarchy of increasing complexity:
+
+- **Atoms** — smallest indivisible building blocks: buttons, input fields, labels, status badges
+- **Molecules** — simple combinations of atoms that form a functional unit: form field with label + input + validation message, a payment cell
+- **Organisms** — complex, self-contained UI sections assembled from molecules and atoms: the job creation form, the job table, assignment modals
+- **Templates** — page-level layout skeletons that position organisms without real content
+- **Pages** — templates filled with live data; the top-level entry point rendered by the React application
+
+This hierarchy ensures components are reusable in isolation, easy to test at each level, and simple to reason about as the dashboard grows.
+
+---
+
 ## Getting Started
 
 You need two terminals running simultaneously: one for the backend and one for the frontend.
