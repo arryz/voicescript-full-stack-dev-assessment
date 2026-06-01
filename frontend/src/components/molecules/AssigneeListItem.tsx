@@ -5,7 +5,7 @@ interface Props {
   name: string;
   city?: string;
   isMatch?: boolean;
-  disabled: boolean;
+  disabled?: boolean;
   onSelect: () => void;
 }
 

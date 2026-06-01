@@ -1,5 +1,4 @@
 import type { JobListItem } from '../../types/api';
-import * as api from '../../services/api';
 import { Button } from '../atoms/Button';
 import { StatusBadge } from '../molecules/StatusBadge';
 import { PayDisplay } from '../molecules/PayDisplay';
@@ -8,28 +7,11 @@ interface Props {
   job: JobListItem;
   onOpenAssign: (job: JobListItem) => void;
   onOpenEditorAssign: (job: JobListItem) => void;
-  onRefresh: () => void;
+  onMarkTranscribed: (jobId: number) => void;
+  onComplete: (jobId: number) => void;
 }
 
-export function JobRow({ job, onOpenAssign, onOpenEditorAssign, onRefresh }: Props) {
-  async function handleMarkTranscribed() {
-    try {
-      await api.markTranscribed(job.id);
-      onRefresh();
-    } catch {
-      // silently ignore; user can retry
-    }
-  }
-
-  async function handleComplete() {
-    try {
-      await api.completeJob(job.id);
-      onRefresh();
-    } catch {
-      // silently ignore; user can retry
-    }
-  }
-
+export function JobRow({ job, onOpenAssign, onOpenEditorAssign, onMarkTranscribed, onComplete }: Props) {
   const locationLabel =
     job.location_type === 'physical' && job.city
       ? `Physical — ${job.city}`
@@ -60,7 +42,7 @@ export function JobRow({ job, onOpenAssign, onOpenEditorAssign, onRefresh }: Pro
           </Button>
         )}
         {job.status === 'ASSIGNED' && (
-          <Button variant="text" color="yellow" onClick={handleMarkTranscribed}>
+          <Button variant="text" color="yellow" onClick={() => onMarkTranscribed(job.id)}>
             Mark Transcribed
           </Button>
         )}
@@ -70,7 +52,7 @@ export function JobRow({ job, onOpenAssign, onOpenEditorAssign, onRefresh }: Pro
           </Button>
         )}
         {job.status === 'REVIEWED' && (
-          <Button variant="text" color="green" onClick={handleComplete}>
+          <Button variant="text" color="green" onClick={() => onComplete(job.id)}>
             Complete
           </Button>
         )}

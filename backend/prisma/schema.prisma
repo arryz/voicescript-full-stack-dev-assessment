@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Reporter {
+  id              Int     @id @default(autoincrement())
+  name            String
+  city            String
+  is_available    Boolean @default(true)
+  rate_per_minute Int     @default(2000)
+  jobs            Job[]
+
+  @@map("reporters")
+}
+
+model Editor {
+  id       Int    @id @default(autoincrement())
+  name     String
+  flat_fee Int    @default(50000)
+  jobs     Job[]
+
+  @@map("editors")
+}
+
+model Job {
+  id               Int       @id @default(autoincrement())
+  case_name        String
+  duration_minutes Int
+  location_type    String
+  city             String?
+  status           String    @default("NEW")
+  reporter_id      Int?
+  editor_id        Int?
+  created_at       DateTime  @default(now())
+  assigned_at      DateTime?
+  transcribed_at   DateTime?
+  reviewed_at      DateTime?
+  completed_at     DateTime?
+
+  reporter         Reporter? @relation(fields: [reporter_id], references: [id])
+  editor           Editor?   @relation(fields: [editor_id], references: [id])
+
+  @@map("jobs")
+}

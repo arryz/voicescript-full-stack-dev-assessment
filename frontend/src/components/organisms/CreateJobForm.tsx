@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { CreateJobRequest, LocationType } from '../../types/api';
-import * as api from '../../services/api';
+import type { LocationType } from '../../types/api';
+import { trpc } from '../../lib/trpc';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Select } from '../atoms/Select';
@@ -17,39 +17,33 @@ export function CreateJobForm({ onCreated }: Props) {
   const [duration, setDuration] = useState('');
   const [locationType, setLocationType] = useState<LocationType>('physical');
   const [city, setCity] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-
-    const data: CreateJobRequest = {
-      case_name: caseName,
-      duration_minutes: parseInt(duration, 10),
-      location_type: locationType,
-      ...(locationType === 'physical' ? { city } : {}),
-    };
-
-    try {
-      await api.createJob(data);
+  const createJobMutation = trpc.jobs.create.useMutation({
+    onSuccess: () => {
       setCaseName('');
       setDuration('');
       setLocationType('physical');
       setCity('');
       onCreated();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create job');
-    } finally {
-      setSubmitting(false);
-    }
+    },
+  });
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    createJobMutation.mutate({
+      case_name: caseName,
+      duration_minutes: parseInt(duration, 10),
+      location_type: locationType,
+      ...(locationType === 'physical' ? { city } : {}),
+    });
   }
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4 text-gray-800">Create New Job</h2>
-      {error && <ErrorMessage message={error} className="mb-3" />}
+      {createJobMutation.error && (
+        <ErrorMessage message={createJobMutation.error.message} className="mb-3" />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField label="Case Name">
@@ -96,8 +90,8 @@ export function CreateJobForm({ onCreated }: Props) {
         )}
       </div>
 
-      <Button type="submit" disabled={submitting} className="mt-4">
-        {submitting ? 'Creating…' : 'Create Job'}
+      <Button type="submit" disabled={createJobMutation.isPending} className="mt-4">
+        {createJobMutation.isPending ? 'Creating…' : 'Create Job'}
       </Button>
     </form>
   );

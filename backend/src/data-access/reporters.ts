@@ -1,21 +1,33 @@
-import { db } from '../db/index';
+import { PrismaClient } from '@prisma/client';
 import { Reporter } from '../types/shared';
 
-export function listAvailableReporters(jobCity: string | null): Reporter[] {
-  if (jobCity) {
-    return db
-      .prepare(
-        `SELECT * FROM reporters
-         WHERE is_available = 1
-         ORDER BY CASE WHEN city = ? THEN 0 ELSE 1 END, name ASC`
-      )
-      .all(jobCity) as Reporter[];
-  }
-  return db
-    .prepare('SELECT * FROM reporters WHERE is_available = 1 ORDER BY name ASC')
-    .all() as Reporter[];
+const prisma = new PrismaClient();
+
+export async function listReporters(
+  prismaClient: PrismaClient = prisma,
+  jobCity?: string
+): Promise<Reporter[]> {
+  return prismaClient.reporter.findMany({
+    where: {
+      is_available: true,
+      ...(jobCity ? { city: jobCity } : {}),
+    },
+    orderBy: { name: 'asc' },
+  });
 }
 
-export function getReporterById(id: number): Reporter | undefined {
-  return db.prepare('SELECT * FROM reporters WHERE id = ?').get(id) as Reporter | undefined;
+// Alias kept for service-layer compatibility
+export async function listAvailableReporters(
+  prismaClient: PrismaClient = prisma,
+  jobCity: string | null
+): Promise<Reporter[]> {
+  return listReporters(prismaClient, jobCity ?? undefined);
+}
+
+export async function getReporterById(
+  prismaClient: PrismaClient = prisma,
+  id: number
+): Promise<Reporter | undefined> {
+  const row = await prismaClient.reporter.findUnique({ where: { id } });
+  return row ?? undefined;
 }

@@ -1,10 +1,16 @@
-import { db } from '../db/index';
+import { PrismaClient } from '@prisma/client';
 import { Editor } from '../types/shared';
 
-export function listEditors(): Editor[] {
-  return db.prepare('SELECT * FROM editors ORDER BY name ASC').all() as Editor[];
+const prisma = new PrismaClient();
+
+export async function listEditors(prismaClient: PrismaClient = prisma): Promise<Editor[]> {
+  return prismaClient.editor.findMany({ orderBy: { name: 'asc' } });
 }
 
-export function getEditorById(id: number): Editor | undefined {
-  return db.prepare('SELECT * FROM editors WHERE id = ?').get(id) as Editor | undefined;
+export async function getEditorById(
+  prismaClient: PrismaClient = prisma,
+  id: number
+): Promise<Editor | undefined> {
+  const row = await prismaClient.editor.findUnique({ where: { id } });
+  return row ?? undefined;
 }

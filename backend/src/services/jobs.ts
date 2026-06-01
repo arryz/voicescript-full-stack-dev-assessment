@@ -1,3 +1,4 @@
+import { PrismaClient } from '@prisma/client';
 import * as jobsDA from '../data-access/jobs';
 import * as reportersDA from '../data-access/reporters';
 import * as editorsDA from '../data-access/editors';
@@ -18,7 +19,7 @@ export class NotFoundError extends Error {
   }
 }
 
-export function createJob(data: CreateJobRequest): JobListItem {
+export async function createJob(prisma: PrismaClient, data: CreateJobRequest): Promise<JobListItem> {
   if (!data.case_name || data.case_name.trim().length === 0) {
     throw new ValidationError('case_name must be a non-empty string');
   }
@@ -31,74 +32,74 @@ export function createJob(data: CreateJobRequest): JobListItem {
   if (data.location_type === 'physical' && (!data.city || data.city.trim().length === 0)) {
     throw new ValidationError('city is required for physical jobs');
   }
-  return jobsDA.createJob(data);
+  return jobsDA.createJob(prisma, data);
 }
 
-export function assignReporter(jobId: number, reporterId: number): JobListItem {
-  const job = jobsDA.getJobById(jobId);
+export async function assignReporter(prisma: PrismaClient, jobId: number, reporterId: number): Promise<JobListItem> {
+  const job = await jobsDA.getJobById(prisma, jobId);
   if (!job) throw new NotFoundError('Job not found');
 
   assertValidTransition(job.status, 'ASSIGNED');
 
-  const reporter = reportersDA.getReporterById(reporterId);
+  const reporter = await reportersDA.getReporterById(prisma, reporterId);
   if (!reporter) throw new NotFoundError('Reporter not found');
   if (!reporter.is_available) {
     throw new WorkflowError('Reporter is not available');
   }
 
-  jobsDA.updateJob(jobId, {
+  await jobsDA.updateJob(prisma, jobId, {
     reporter_id: reporterId,
     status: 'ASSIGNED',
     assigned_at: sqliteNow(),
   });
 
-  return jobsDA.listJobById(jobId) as JobListItem;
+  return (await jobsDA.listJobById(prisma, jobId)) as JobListItem;
 }
 
-export function markTranscribed(jobId: number): JobListItem {
-  const job = jobsDA.getJobById(jobId);
+export async function markTranscribed(prisma: PrismaClient, jobId: number): Promise<JobListItem> {
+  const job = await jobsDA.getJobById(prisma, jobId);
   if (!job) throw new NotFoundError('Job not found');
 
   assertValidTransition(job.status, 'TRANSCRIBED');
 
-  jobsDA.updateJob(jobId, {
+  await jobsDA.updateJob(prisma, jobId, {
     status: 'TRANSCRIBED',
     transcribed_at: sqliteNow(),
   });
 
-  return jobsDA.listJobById(jobId) as JobListItem;
+  return (await jobsDA.listJobById(prisma, jobId)) as JobListItem;
 }
 
-export function assignEditor(jobId: number, editorId: number): JobListItem {
-  const job = jobsDA.getJobById(jobId);
+export async function assignEditor(prisma: PrismaClient, jobId: number, editorId: number): Promise<JobListItem> {
+  const job = await jobsDA.getJobById(prisma, jobId);
   if (!job) throw new NotFoundError('Job not found');
 
   assertValidTransition(job.status, 'REVIEWED');
 
-  const editor = editorsDA.getEditorById(editorId);
+  const editor = await editorsDA.getEditorById(prisma, editorId);
   if (!editor) throw new NotFoundError('Editor not found');
 
-  jobsDA.updateJob(jobId, {
+  await jobsDA.updateJob(prisma, jobId, {
     editor_id: editorId,
     status: 'REVIEWED',
     reviewed_at: sqliteNow(),
   });
 
-  return jobsDA.listJobById(jobId) as JobListItem;
+  return (await jobsDA.listJobById(prisma, jobId)) as JobListItem;
 }
 
-export function completeJob(jobId: number): JobListItem {
-  const job = jobsDA.getJobById(jobId);
+export async function completeJob(prisma: PrismaClient, jobId: number): Promise<JobListItem> {
+  const job = await jobsDA.getJobById(prisma, jobId);
   if (!job) throw new NotFoundError('Job not found');
 
   assertValidTransition(job.status, 'COMPLETED');
 
-  jobsDA.updateJob(jobId, {
+  await jobsDA.updateJob(prisma, jobId, {
     status: 'COMPLETED',
     completed_at: sqliteNow(),
   });
 
-  return jobsDA.listJobById(jobId) as JobListItem;
+  return (await jobsDA.listJobById(prisma, jobId)) as JobListItem;
 }
 
 function sqliteNow(): string {

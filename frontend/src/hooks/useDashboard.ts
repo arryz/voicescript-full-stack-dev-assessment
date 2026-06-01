@@ -1,29 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
-import { JobListItem } from '../types/api';
-import * as api from '../services/api';
+import { useCallback } from 'react';
+import { trpc } from '../lib/trpc';
 
 export function useDashboard() {
-  const [jobs, setJobs] = useState<JobListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: jobs = [], isLoading: loading, error } = trpc.jobs.list.useQuery();
+  const utils = trpc.useUtils();
 
   const refresh = useCallback(() => {
-    setLoading(true);
-    api
-      .fetchJobs()
-      .then((data) => {
-        setJobs(data);
-        setError(null);
-      })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Failed to load jobs');
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    void utils.jobs.list.invalidate();
+  }, [utils]);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return { jobs, refresh, loading, error };
+  return {
+    jobs,
+    refresh,
+    loading,
+    error: error?.message ?? null,
+  };
 }

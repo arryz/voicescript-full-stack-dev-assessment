@@ -8,8 +8,18 @@ import { ErrorMessage } from '../atoms/ErrorMessage';
 
 export function Dashboard() {
   const { jobs, refresh, loading, error } = useDashboard();
-  const { modalOpen, selectedJob, mode, openModal, openEditorModal, closeModal, onAssigned } =
-    useAssignment(refresh);
+  const {
+    modalOpen,
+    selectedJob,
+    mode,
+    openModal,
+    openEditorModal,
+    closeModal,
+    assignReporterMutation,
+    markTranscribedMutation,
+    assignEditorMutation,
+    completeMutation,
+  } = useAssignment(refresh);
 
   return (
     <DashboardTemplate
@@ -24,7 +34,8 @@ export function Dashboard() {
             jobs={jobs}
             onOpenAssign={openModal}
             onOpenEditorAssign={openEditorModal}
-            onRefresh={refresh}
+            onMarkTranscribed={(id) => markTranscribedMutation.mutate({ id })}
+            onComplete={(id) => completeMutation.mutate({ id })}
           />
         )
       }
@@ -34,7 +45,13 @@ export function Dashboard() {
             job={selectedJob}
             mode={mode}
             onClose={closeModal}
-            onAssigned={onAssigned}
+            assigning={assignReporterMutation.isPending || assignEditorMutation.isPending}
+            onAssignReporter={(reporterId) =>
+              assignReporterMutation.mutate({ id: selectedJob.id, reporter_id: reporterId })
+            }
+            onAssignEditor={(editorId) =>
+              assignEditorMutation.mutate({ id: selectedJob.id, editor_id: editorId })
+            }
           />
         ) : undefined
       }

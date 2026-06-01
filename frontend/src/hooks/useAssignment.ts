@@ -1,10 +1,35 @@
 import { useState } from 'react';
-import { JobListItem } from '../types/api';
+import { trpc } from '../lib/trpc';
+import type { JobListItem } from '../types/api';
 
 export function useAssignment(refresh: () => void) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobListItem | null>(null);
   const [mode, setMode] = useState<'reporter' | 'editor'>('reporter');
+
+  const assignReporterMutation = trpc.jobs.assignReporter.useMutation({
+    onSuccess: () => {
+      setModalOpen(false);
+      setSelectedJob(null);
+      refresh();
+    },
+  });
+
+  const markTranscribedMutation = trpc.jobs.markTranscribed.useMutation({
+    onSuccess: refresh,
+  });
+
+  const assignEditorMutation = trpc.jobs.assignEditor.useMutation({
+    onSuccess: () => {
+      setModalOpen(false);
+      setSelectedJob(null);
+      refresh();
+    },
+  });
+
+  const completeMutation = trpc.jobs.complete.useMutation({
+    onSuccess: refresh,
+  });
 
   function openModal(job: JobListItem) {
     setSelectedJob(job);
@@ -23,10 +48,16 @@ export function useAssignment(refresh: () => void) {
     setSelectedJob(null);
   }
 
-  function onAssigned() {
-    closeModal();
-    refresh();
-  }
-
-  return { modalOpen, selectedJob, mode, openModal, openEditorModal, closeModal, onAssigned };
+  return {
+    modalOpen,
+    selectedJob,
+    mode,
+    openModal,
+    openEditorModal,
+    closeModal,
+    assignReporterMutation,
+    markTranscribedMutation,
+    assignEditorMutation,
+    completeMutation,
+  };
 }

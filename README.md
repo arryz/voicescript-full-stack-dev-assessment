@@ -13,17 +13,16 @@ You need two terminals running simultaneously: one for the backend and one for t
 - Node.js 20 LTS or later
 - npm 9 or later (bundled with Node 20)
 
-### 1. Start the Backend
+### 1. Install and set up the Backend
 
 ```bash
 cd backend
 npm install
+npm run db:setup   # applies Prisma migrations and seeds reporters + editors
 npm run dev
 ```
 
-The API server starts at **http://localhost:3001**.
-
-On first run the migration runner automatically creates and seeds the SQLite database at `backend/data/court_reporting.db`. Subsequent starts skip already-applied migrations.
+The tRPC server starts at **http://localhost:3001**, with the tRPC handler mounted at `/trpc`.
 
 ### 2. Start the Frontend
 
@@ -37,7 +36,7 @@ npm run dev
 
 The app opens at **http://localhost:5173**.
 
-Vite proxies all `/api/*` requests to the backend, so no extra CORS configuration is needed.
+Vite proxies all `/trpc` requests to the backend.
 
 ---
 
@@ -50,7 +49,7 @@ Create court reporting jobs with the following details:
 - **Case Name** — the name of the court case (e.g. "Smith v. Jones")
 - **Duration** — length of the session in minutes
 - **Location Type** — Physical (requires a city) or Remote
-- **City** — required for physical jobs; used to surface same-city reporters first
+- **City** — required for physical jobs; used to filter same-city reporters
 
 Every job starts in **NEW** status and moves through a strict, linear workflow.
 
@@ -58,8 +57,7 @@ Every job starts in **NEW** status and moves through a strict, linear workflow.
 
 Assign an available reporter to any NEW job:
 
-- Only available reporters are shown in the assignment modal
-- For physical jobs, reporters based in the same city as the job are highlighted and listed first
+- For physical jobs, only reporters in the same city are shown
 - Assigning a reporter advances the job to **ASSIGNED** status
 
 ### Transcription Tracking
@@ -111,7 +109,7 @@ Attempting any out-of-order transition (e.g. assigning an editor to a NEW job) r
 
 1. **Create a job** — fill in the form at the top of the page and click **Create Job**. The new job appears in the table with status NEW.
 
-2. **Assign a reporter** — click **Assign Reporter** on a NEW job. A modal opens showing available reporters; for physical jobs, same-city reporters appear first with a green badge. Click **Select** next to a reporter.
+2. **Assign a reporter** — click **Assign Reporter** on a NEW job. A modal opens showing available reporters in the same city (for physical jobs). Click **Select** next to a reporter.
 
 3. **Mark as transcribed** — once the reporter finishes, click **Mark Transcribed** on an ASSIGNED job.
 
@@ -125,7 +123,7 @@ Attempting any out-of-order transition (e.g. assigning an editor to a NEW job) r
 
 ## Seed Data
 
-The database is pre-seeded on first startup.
+The database is seeded on first setup via `npm run db:setup`.
 
 **Reporters:**
 
@@ -147,11 +145,11 @@ The database is pre-seeded on first startup.
 
 ## Resetting the Database
 
-Delete the database file and restart the backend:
+Delete the database file and re-run setup:
 
 ```bash
 rm backend/data/court_reporting.db
-cd backend && npm run dev
+cd backend && npm run db:setup
 ```
 
 ---
@@ -161,8 +159,10 @@ cd backend && npm run dev
 | Layer | Technology |
 |---|---|
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS |
-| Backend | Node.js, Express 4, TypeScript |
-| Database | SQLite via better-sqlite3 |
+| API Client | tRPC v11, TanStack Query v5 |
+| Backend | Node.js, Express 4, TypeScript, tRPC v11 |
+| ORM | Prisma 5.x |
+| Database | SQLite (via Prisma) |
 
 ---
 
@@ -175,6 +175,8 @@ cd backend && npm run dev
 | `npm run dev` | Start with ts-node-dev (auto-restarts on file change) |
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm start` | Run compiled `dist/index.js` |
+| `npm run db:setup` | Apply Prisma migrations and seed the database |
+| `npm test` | Run integration tests with Jest |
 
 ### Frontend (`cd frontend`)
 

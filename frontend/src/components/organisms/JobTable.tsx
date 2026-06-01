@@ -5,7 +5,8 @@ interface Props {
   jobs: JobListItem[];
   onOpenAssign: (job: JobListItem) => void;
   onOpenEditorAssign: (job: JobListItem) => void;
-  onRefresh: () => void;
+  onMarkTranscribed: (jobId: number) => void;
+  onComplete: (jobId: number) => void;
 }
 
 const COLUMNS = [
@@ -13,7 +14,7 @@ const COLUMNS = [
   'Reporter', 'Editor', 'Reporter Pay', 'Editor Pay', 'Actions',
 ];
 
-export function JobTable({ jobs, onOpenAssign, onOpenEditorAssign, onRefresh }: Props) {
+export function JobTable({ jobs, onOpenAssign, onOpenEditorAssign, onMarkTranscribed, onComplete }: Props) {
   return (
     <div className="bg-white rounded-lg shadow overflow-x-auto">
       <table className="w-full text-left">
@@ -43,7 +44,8 @@ export function JobTable({ jobs, onOpenAssign, onOpenEditorAssign, onRefresh }: 
                 job={job}
                 onOpenAssign={onOpenAssign}
                 onOpenEditorAssign={onOpenEditorAssign}
-                onRefresh={onRefresh}
+                onMarkTranscribed={onMarkTranscribed}
+                onComplete={onComplete}
               />
             ))
           )}

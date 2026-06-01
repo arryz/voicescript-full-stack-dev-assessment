@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import type { Editor, JobListItem, Reporter } from '../../types/api';
-import * as api from '../../services/api';
+import { trpc } from '../../lib/trpc';
+import type { JobListItem } from '../../types/api';
 import { ErrorMessage } from '../atoms/ErrorMessage';
 import { AssigneeListItem } from '../molecules/AssigneeListItem';
 
@@ -8,49 +7,31 @@ interface Props {
   job: JobListItem;
   mode: 'reporter' | 'editor';
   onClose: () => void;
-  onAssigned: () => void;
+  onAssignReporter: (reporterId: number) => void;
+  onAssignEditor: (editorId: number) => void;
+  assigning?: boolean;
 }
 
-export function AssignModal({ job, mode, onClose, onAssigned }: Props) {
-  const [reporters, setReporters] = useState<Reporter[]>([]);
-  const [editors, setEditors] = useState<Editor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [assigning, setAssigning] = useState(false);
+export function AssignModal({ job, mode, onClose, onAssignReporter, onAssignEditor, assigning = false }: Props) {
+  const reportersQuery = trpc.reporters.list.useQuery(
+    { jobCity: job.city ?? undefined },
+    { enabled: mode === 'reporter' }
+  );
+  const editorsQuery = trpc.editors.list.useQuery(
+    undefined,
+    { enabled: mode === 'editor' }
+  );
 
-  useEffect(() => {
+  const reporters = reportersQuery.data ?? [];
+  const editors = editorsQuery.data ?? [];
+  const loading = mode === 'reporter' ? reportersQuery.isLoading : editorsQuery.isLoading;
+  const queryError = mode === 'reporter' ? reportersQuery.error : editorsQuery.error;
+
+  function handleSelect(id: number) {
     if (mode === 'reporter') {
-      api
-        .fetchReporters(job.city ?? undefined)
-        .then(setReporters)
-        .catch((err: unknown) =>
-          setError(err instanceof Error ? err.message : 'Failed to load reporters')
-        )
-        .finally(() => setLoading(false));
+      onAssignReporter(id);
     } else {
-      api
-        .fetchEditors()
-        .then(setEditors)
-        .catch((err: unknown) =>
-          setError(err instanceof Error ? err.message : 'Failed to load editors')
-        )
-        .finally(() => setLoading(false));
-    }
-  }, [mode, job.city]);
-
-  async function handleSelect(id: number) {
-    setAssigning(true);
-    setError(null);
-    try {
-      if (mode === 'reporter') {
-        await api.assignReporter(job.id, { reporter_id: id });
-      } else {
-        await api.assignEditor(job.id, { editor_id: id });
-      }
-      onAssigned();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Assignment failed');
-      setAssigning(false);
+      onAssignEditor(id);
     }
   }
 
@@ -69,7 +50,7 @@ export function AssignModal({ job, mode, onClose, onAssigned }: Props) {
           </button>
         </div>
 
-        {error && <ErrorMessage message={error} className="mb-3" />}
+        {queryError && <ErrorMessage message={queryError.message} className="mb-3" />}
 
         {loading ? (
           <p className="text-gray-500 text-sm">Loading…</p>

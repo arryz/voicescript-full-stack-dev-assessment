@@ -19,7 +19,7 @@
 
 **Purpose**: Establish the SC-002 baseline so the post-refactor test run can be compared against a known good state.
 
-- [ ] T000 On the current main branch (before any Phase 1 changes), run `npm test` in backend/ and frontend/; record total test count and pass/fail status. If no tests exist, document "0 tests — SC-002 vacuously satisfied."
+- [X] T000 On the current main branch (before any Phase 1 changes), run `npm test` in backend/ and frontend/; record total test count and pass/fail status. If no tests exist, document "0 tests — SC-002 vacuously satisfied."
 
 ---
 
@@ -27,10 +27,10 @@
 
 **Purpose**: Install new packages and create environment config so all subsequent phases compile.
 
-- [ ] T001 Add backend production dependencies (@trpc/server@11, @prisma/client@5, zod@3) to backend/package.json and run npm install in backend/
-- [ ] T002 [P] Add frontend production dependencies (@trpc/client@11, @trpc/react-query@11, @tanstack/react-query@5) to frontend/package.json and run npm install in frontend/
-- [ ] T003 [P] Add backend dev dependencies (prisma@5, ts-node, @types/jest, jest, ts-jest) to backend/package.json devDependencies and run npm install in backend/
-- [ ] T004 [P] Create backend/.env with DATABASE_URL="file:./data/court_reporting.db"
+- [X] T001 Add backend production dependencies (@trpc/server@11, @prisma/client@5, zod@3) to backend/package.json and run npm install in backend/
+- [X] T002 [P] Add frontend production dependencies (@trpc/client@11, @trpc/react-query@11, @tanstack/react-query@5) to frontend/package.json and run npm install in frontend/
+- [X] T003 [P] Add backend dev dependencies (prisma@5, ts-node, @types/jest, jest, ts-jest) to backend/package.json devDependencies and run npm install in backend/
+- [X] T004 [P] Create backend/.env with DATABASE_URL="file:./data/court_reporting.db"
 
 ---
 
@@ -40,11 +40,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Create backend/prisma/schema.prisma with generator (prisma-client-js), datasource (sqlite, env DATABASE_URL), and models Reporter, Editor, Job exactly as specified in data-model.md (including @@map directives, nullable FKs, and DateTime fields)
-- [ ] T006 Run `npx prisma migrate dev --name init` from backend/ to generate backend/prisma/migrations/…_init/ SQL files and regenerate the Prisma client in backend/node_modules/.prisma/client/
-- [ ] T007 Create backend/src/trpc/context.ts exporting createContext function that instantiates and returns a PrismaClient; export Context type inferred from createContext return
-- [ ] T008 [P] Create backend/src/trpc/schemas.ts with Zod schemas: CreateJobSchema, AssignReporterSchema, AssignEditorSchema, JobIdSchema, ListReportersSchema as defined in data-model.md
-- [ ] T009 Update backend/src/types/shared.ts to re-export Prisma-generated types (Reporter, Editor, Job) via `export type { Reporter, Editor, Job } from '@prisma/client'` and define JobListItem, CreateJobRequest, AssignReporterRequest, AssignEditorRequest as specified in data-model.md
+- [X] T005 Create backend/prisma/schema.prisma with generator (prisma-client-js), datasource (sqlite, env DATABASE_URL), and models Reporter, Editor, Job exactly as specified in data-model.md (including @@map directives, nullable FKs, and DateTime fields)
+- [X] T006 Run `npx prisma migrate dev --name init` from backend/ to generate backend/prisma/migrations/…_init/ SQL files and regenerate the Prisma client in backend/node_modules/.prisma/client/
+- [X] T007 Create backend/src/trpc/context.ts exporting createContext function that instantiates and returns a PrismaClient; export Context type inferred from createContext return
+- [X] T008 [P] Create backend/src/trpc/schemas.ts with Zod schemas: CreateJobSchema, AssignReporterSchema, AssignEditorSchema, JobIdSchema, ListReportersSchema as defined in data-model.md
+- [X] T009 Update backend/src/types/shared.ts to re-export Prisma-generated types (Reporter, Editor, Job) via `export type { Reporter, Editor, Job } from '@prisma/client'` and define JobListItem, CreateJobRequest, AssignReporterRequest, AssignEditorRequest as specified in data-model.md
 
 **Checkpoint**: Foundation ready — `npx tsc --noEmit` in backend/ passes; Prisma client types are importable. User story implementation can now begin.
 
@@ -58,24 +58,24 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] Rewrite backend/src/data-access/jobs.ts using PrismaClient: implement listJobs (findMany with include reporter+editor, compute reporter_pay = duration_minutes × rate_per_minute and editor_pay = flat_fee in TypeScript, return JobListItem[]), getJobById, createJob, and updateJob
-- [ ] T011 [P] [US1] Rewrite backend/src/data-access/reporters.ts using PrismaClient: implement listReporters with optional jobCity filter (city equality match) returning Reporter[]
-- [ ] T012 [P] [US1] Rewrite backend/src/data-access/editors.ts using PrismaClient: implement listEditors returning Editor[]
-- [ ] T013 [P] [US1] Create backend/src/trpc/routers/jobs.ts with jobs sub-router: list query (no input → JobListItem[]), create mutation (CreateJobSchema → JobListItem), assignReporter mutation (AssignReporterSchema → JobListItem), markTranscribed mutation (JobIdSchema → JobListItem), assignEditor mutation (AssignEditorSchema → JobListItem), complete mutation (JobIdSchema → JobListItem); delegate to service layer for all business logic; catch WorkflowError → TRPCError CONFLICT, NotFoundError → NOT_FOUND, ValidationError → BAD_REQUEST
-- [ ] T014 [P] [US1] Create backend/src/trpc/routers/reporters.ts with reporters sub-router: list query (ListReportersSchema → Reporter[])
-- [ ] T015 [P] [US1] Create backend/src/trpc/routers/editors.ts with editors sub-router: list query (no input → Editor[])
-- [ ] T016 [US1] Create backend/src/trpc/router.ts: instantiate tRPC via initTRPC.context<Context>().create(), assemble appRouter from jobs, reporters, and editors sub-routers, export appRouter and `export type AppRouter = typeof appRouter`
-- [ ] T017 [US1] Update backend/src/index.ts to import createExpressMiddleware from @trpc/server/adapters/express, mount `app.use('/trpc', createExpressMiddleware({ router: appRouter, createContext }))`, and remove all imports and app.use() calls referencing backend/src/routes/
-- [ ] T018 [P] [US1] Update frontend/tsconfig.json compilerOptions to add `"paths": { "@backend/*": ["../backend/src/*"] }` and ensure baseUrl is set to "."
-- [ ] T019 [P] [US1] Update frontend/vite.config.ts to add `resolve: { alias: { '@backend': path.resolve(__dirname, '../backend/src') } }` using path import from node:path
-- [ ] T020 [US1] Create frontend/src/lib/trpc.ts: `import { createTRPCReact } from '@trpc/react-query'; import type { AppRouter } from '@backend/trpc/router'; export const trpc = createTRPCReact<AppRouter>();`
-- [ ] T021 [US1] Update frontend/src/main.tsx to import QueryClient and QueryClientProvider from @tanstack/react-query and trpc + httpBatchLink, create queryClient and trpcClient instances, wrap App render with `<trpc.Provider client={trpcClient} queryClient={queryClient}><QueryClientProvider client={queryClient}>…</QueryClientProvider></trpc.Provider>`
-- [ ] T022 [US1] Update frontend/src/types/api.ts to remove all manual REST-derived type definitions and replace with types inferred from AppRouter (e.g. `type JobListItem = inferRouterOutputs<AppRouter>['jobs']['list'][number]`)
-- [ ] T023 [US1] Update frontend/src/hooks/useDashboard.ts to replace all fetch() calls with trpc.jobs.list.useQuery(), trpc.reporters.list.useQuery({ jobCity }), and trpc.editors.list.useQuery()
-- [ ] T024 [US1] Update frontend/src/hooks/useAssignment.ts to replace all fetch() calls with trpc.jobs.assignReporter.useMutation(), trpc.jobs.markTranscribed.useMutation(), trpc.jobs.assignEditor.useMutation(), and trpc.jobs.complete.useMutation()
-- [ ] T025 [P] [US1] Delete backend/src/routes/ directory (all Express REST route handler files removed; tRPC router is the only API surface)
-- [ ] T026 [P] [US1] Delete backend/src/controllers/ directory (all REST controller files removed)
-- [ ] T027 [P] [US1] Delete frontend/src/services/api.ts (REST fetch client replaced entirely by tRPC React hooks)
+- [X] T010 [P] [US1] Rewrite backend/src/data-access/jobs.ts using PrismaClient: implement listJobs (findMany with include reporter+editor, compute reporter_pay = duration_minutes × rate_per_minute and editor_pay = flat_fee in TypeScript, return JobListItem[]), getJobById, createJob, and updateJob
+- [X] T011 [P] [US1] Rewrite backend/src/data-access/reporters.ts using PrismaClient: implement listReporters with optional jobCity filter (city equality match) returning Reporter[]
+- [X] T012 [P] [US1] Rewrite backend/src/data-access/editors.ts using PrismaClient: implement listEditors returning Editor[]
+- [X] T013 [P] [US1] Create backend/src/trpc/routers/jobs.ts with jobs sub-router: list query (no input → JobListItem[]), create mutation (CreateJobSchema → JobListItem), assignReporter mutation (AssignReporterSchema → JobListItem), markTranscribed mutation (JobIdSchema → JobListItem), assignEditor mutation (AssignEditorSchema → JobListItem), complete mutation (JobIdSchema → JobListItem); delegate to service layer for all business logic; catch WorkflowError → TRPCError CONFLICT, NotFoundError → NOT_FOUND, ValidationError → BAD_REQUEST
+- [X] T014 [P] [US1] Create backend/src/trpc/routers/reporters.ts with reporters sub-router: list query (ListReportersSchema → Reporter[])
+- [X] T015 [P] [US1] Create backend/src/trpc/routers/editors.ts with editors sub-router: list query (no input → Editor[])
+- [X] T016 [US1] Create backend/src/trpc/router.ts: instantiate tRPC via initTRPC.context<Context>().create(), assemble appRouter from jobs, reporters, and editors sub-routers, export appRouter and `export type AppRouter = typeof appRouter`
+- [X] T017 [US1] Update backend/src/index.ts to import createExpressMiddleware from @trpc/server/adapters/express, mount `app.use('/trpc', createExpressMiddleware({ router: appRouter, createContext }))`, and remove all imports and app.use() calls referencing backend/src/routes/
+- [X] T018 [P] [US1] Update frontend/tsconfig.json compilerOptions to add `"paths": { "@backend/*": ["../backend/src/*"] }` and ensure baseUrl is set to "."
+- [X] T019 [P] [US1] Update frontend/vite.config.ts to add `resolve: { alias: { '@backend': path.resolve(__dirname, '../backend/src') } }` using path import from node:path
+- [X] T020 [US1] Create frontend/src/lib/trpc.ts: `import { createTRPCReact } from '@trpc/react-query'; import type { AppRouter } from '@backend/trpc/router'; export const trpc = createTRPCReact<AppRouter>();`
+- [X] T021 [US1] Update frontend/src/main.tsx to import QueryClient and QueryClientProvider from @tanstack/react-query and trpc + httpBatchLink, create queryClient and trpcClient instances, wrap App render with `<trpc.Provider client={trpcClient} queryClient={queryClient}><QueryClientProvider client={queryClient}>…</QueryClientProvider></trpc.Provider>`
+- [X] T022 [US1] Update frontend/src/types/api.ts to remove all manual REST-derived type definitions and replace with types inferred from AppRouter (e.g. `type JobListItem = inferRouterOutputs<AppRouter>['jobs']['list'][number]`)
+- [X] T023 [US1] Update frontend/src/hooks/useDashboard.ts to replace all fetch() calls with trpc.jobs.list.useQuery(), trpc.reporters.list.useQuery({ jobCity }), and trpc.editors.list.useQuery()
+- [X] T024 [US1] Update frontend/src/hooks/useAssignment.ts to replace all fetch() calls with trpc.jobs.assignReporter.useMutation(), trpc.jobs.markTranscribed.useMutation(), trpc.jobs.assignEditor.useMutation(), and trpc.jobs.complete.useMutation()
+- [X] T025 [P] [US1] Delete backend/src/routes/ directory (all Express REST route handler files removed; tRPC router is the only API surface)
+- [X] T026 [P] [US1] Delete backend/src/controllers/ directory (all REST controller files removed)
+- [X] T027 [P] [US1] Delete frontend/src/services/api.ts (REST fetch client replaced entirely by tRPC React hooks)
 
 **Checkpoint**: Run `cd backend && npx tsc --noEmit` and `cd frontend && npm run build` — both compile with zero TypeScript errors. User Story 1 is independently verified by the rename test described above.
 
@@ -89,9 +89,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T028 [P] [US2] Create backend/prisma/seed.ts using PrismaClient to upsert seed records: reporters Adi Santoso (Jakarta), Budi Hartono (Jakarta), Citra Dewi (Surabaya), Dian Permata (Bandung, is_available=false) all with rate_per_minute=2000; editors Eka Rahardjo and Farah Yunita both with flat_fee=50000; wrap in try/finally to disconnect PrismaClient
-- [ ] T029 [US2] Add `"prisma": { "seed": "ts-node prisma/seed.ts" }` field to backend/package.json; add script `"db:setup": "prisma migrate dev --name init && prisma db seed"` to backend/package.json scripts; add script `"test": "jest"` to backend/package.json scripts
-- [ ] T030 [US2] Delete backend/src/db/ directory (better-sqlite3 database setup and migration runner code replaced by Prisma)
+- [X] T028 [P] [US2] Create backend/prisma/seed.ts using PrismaClient to upsert seed records: reporters Adi Santoso (Jakarta), Budi Hartono (Jakarta), Citra Dewi (Surabaya), Dian Permata (Bandung, is_available=false) all with rate_per_minute=2000; editors Eka Rahardjo and Farah Yunita both with flat_fee=50000; wrap in try/finally to disconnect PrismaClient
+- [X] T029 [US2] Add `"prisma": { "seed": "ts-node prisma/seed.ts" }` field to backend/package.json; add script `"db:setup": "prisma migrate dev --name init && prisma db seed"` to backend/package.json scripts; add script `"test": "jest"` to backend/package.json scripts
+- [X] T030 [US2] Delete backend/src/db/ directory (better-sqlite3 database setup and migration runner code replaced by Prisma)
 
 **Checkpoint**: Run `cd backend && npm run db:setup` against a clean data/ directory — migration applies, Prisma client regenerates, seed inserts 4 reporters and 2 editors. Confirm with `npx prisma studio` or a direct query.
 
@@ -107,15 +107,15 @@
 
 > **Write these tests against the real implementation and confirm they pass green after Phase 3 + Phase 4 are complete.**
 
-- [ ] T031 [US3] Create backend/src/tests/helpers/testDb.ts: export setupTestDb() that creates a PrismaClient connected to `file:./test.db`, runs `prisma migrate deploy`, seeds reporters and editors, and returns the client; export teardownTestDb() that deletes all rows and disconnects; configure backend/jest.config.ts with ts-jest preset and testEnvironment=node
-- [ ] T032 [P] [US3] Create backend/src/tests/jobs.list.test.ts: use createCallerFactory(appRouter) with testDb context; assert jobs.list returns an array where each item has id, case_name, status, reporter_pay (number), editor_pay (number), reporter_name (string|null), editor_name (string|null) with correct computed values after seeding a test job
-- [ ] T033 [P] [US3] Create backend/src/tests/jobs.workflow.test.ts: seed a job and assert the full state machine — jobs.assignReporter transitions status to ASSIGNED and sets reporter_id; jobs.markTranscribed transitions to TRANSCRIBED; jobs.assignEditor transitions to REVIEWED and sets editor_id; jobs.complete transitions to COMPLETED; assert jobs.assignReporter on a COMPLETED job throws TRPCError with code CONFLICT
-- [ ] T034 [P] [US3] Create backend/src/tests/reporters.test.ts: assert reporters.list returns all reporters; assert reporters.list({ jobCity: 'Jakarta' }) returns only reporters whose city matches
-- [ ] T035 [P] [US3] Create backend/src/tests/editors.test.ts: assert editors.list returns all editors with id and name fields
+- [X] T031 [US3] Create backend/src/tests/helpers/testDb.ts: export setupTestDb() that creates a PrismaClient connected to `file:./test.db`, runs `prisma migrate deploy`, seeds reporters and editors, and returns the client; export teardownTestDb() that deletes all rows and disconnects; configure backend/jest.config.ts with ts-jest preset and testEnvironment=node
+- [X] T032 [P] [US3] Create backend/src/tests/jobs.list.test.ts: use createCallerFactory(appRouter) with testDb context; assert jobs.list returns an array where each item has id, case_name, status, reporter_pay (number), editor_pay (number), reporter_name (string|null), editor_name (string|null) with correct computed values after seeding a test job
+- [X] T033 [P] [US3] Create backend/src/tests/jobs.workflow.test.ts: seed a job and assert the full state machine — jobs.assignReporter transitions status to ASSIGNED and sets reporter_id; jobs.markTranscribed transitions to TRANSCRIBED; jobs.assignEditor transitions to REVIEWED and sets editor_id; jobs.complete transitions to COMPLETED; assert jobs.assignReporter on a COMPLETED job throws TRPCError with code CONFLICT
+- [X] T034 [P] [US3] Create backend/src/tests/reporters.test.ts: assert reporters.list returns all reporters; assert reporters.list({ jobCity: 'Jakarta' }) returns only reporters whose city matches
+- [X] T035 [P] [US3] Create backend/src/tests/editors.test.ts: assert editors.list returns all editors with id and name fields
 
 ### Validation for User Story 3
 
-- [ ] T036 [US3] Run `npm test && npm run lint` in backend/ and frontend/ and resolve all failures so CI is fully green
+- [X] T036 [US3] Run `npm test && npm run lint` in backend/ and frontend/ and resolve all failures so CI is fully green
 
 **Checkpoint**: `npm test` passes for all 5 test files. `npm run lint` exits 0 in both packages. Manual walkthrough of the dashboard in the browser shows all jobs, reporter assignment, and status transitions working as before.
 
@@ -125,9 +125,9 @@
 
 **Purpose**: Validate freshinstall experience and confirm SC-003 and SC-004 success criteria are met end-to-end.
 
-- [ ] T037 Update README.md: replace the Tech Stack table (better-sqlite3 → Prisma 5.x, add tRPC v11 + TanStack Query v5 rows); replace the "Start the Backend" instructions with the new three-step sequence (npm install → npm run db:setup → npm run dev); update the Vite proxy note from `/api/*` → `/trpc`; add `npm run db:setup` to the Backend Available Scripts table; update "Resetting the Database" section to use `npm run db:setup` instead of manual migration restart
-- [ ] T038 [P] Validate SC-004 (fresh-install under 3 minutes): on a clean checkout run `cd backend && npm install && npm run db:setup && npm run dev` then `cd frontend && npm install && npm run dev`; confirm both servers start and the dashboard loads in under 3 minutes total
-- [ ] T039 [P] Validate SC-003 (compile-time contract mismatch in under 5 seconds): rename `reporter_name` → `reporterName` in the return mapping of backend/src/trpc/routers/jobs.ts, run `cd frontend && npm run build`, confirm TypeScript reports errors within 5 seconds, then revert and confirm clean build
+- [X] T037 Update README.md: replace the Tech Stack table (better-sqlite3 → Prisma 5.x, add tRPC v11 + TanStack Query v5 rows); replace the "Start the Backend" instructions with the new three-step sequence (npm install → npm run db:setup → npm run dev); update the Vite proxy note from `/api/*` → `/trpc`; add `npm run db:setup` to the Backend Available Scripts table; update "Resetting the Database" section to use `npm run db:setup` instead of manual migration restart
+- [X] T038 [P] Validate SC-004 (fresh-install under 3 minutes): on a clean checkout run `cd backend && npm install && npm run db:setup && npm run dev` then `cd frontend && npm install && npm run dev`; confirm both servers start and the dashboard loads in under 3 minutes total
+- [X] T039 [P] Validate SC-003 (compile-time contract mismatch in under 5 seconds): rename `reporter_name` → `reporterName` in the return mapping of backend/src/trpc/routers/jobs.ts, run `cd frontend && npm run build`, confirm TypeScript reports errors within 5 seconds, then revert and confirm clean build
 
 ---
 
